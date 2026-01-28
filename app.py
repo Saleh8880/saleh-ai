@@ -1,11 +1,11 @@
 import streamlit as st
 import requests
 
-st.set_page_config(page_title="SALEH AI PRO", page_icon="✨ ")
+st.set_page_config(page_title="SALEH AI PRO", page_icon="👑")
 
 NEW_API_KEY = "AIzaSyAap0wkUBLjvHgmKe4sfil8FWgoc3Tfp5M"
 
-st.title("✨  SALEH AI - pro")
+st.title("👑 SALEH AI - ULTIMATE")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
