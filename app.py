@@ -3,50 +3,50 @@ import requests
 
 st.set_page_config(page_title="SALEH AI PRO", page_icon="👑")
 
-st.markdown("""
-    <style>
-    .main { background-color: #050505; }
-    div[data-testid="stChatMessage"] { border-radius: 15px; border: 1px solid #D4AF37; color: white; }
-    </style>
-    """, unsafe_allow_html=True)
+NEW_API_KEY = "AIzaSyAap0wkUBLjvHgmKe4sfil8FWgoc3Tfp5M"
 
 st.title("👑 SALEH AI - ULTIMATE")
-
-# المفتاح الجديد بتاعك
-NEW_API_KEY = "AIzaSyAap0wkUBLjvHgmKe4sfil8FWgoc3Tfp5M"
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# عرض المحادثة
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    with st.chat_message(message["role"]): st.markdown(message["content"])
+
+# دالة للبحث عن الموديل الشغال فعلياً في حسابك
+def find_any_working_model():
+    # بنسأل جوجل عن القائمة المتاحة لك
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={NEW_API_KEY}"
+    try:
+        response = requests.get(url)
+        models_data = response.json()
+        # بنور على أي موديل بيدعم generateContent
+        for m in models_data.get('models', []):
+            if 'generateContent' in m.get('supportedGenerationMethods', []):
+                return m['name'] # هيرجع حاجة زي models/gemini-1.5-flash-latest
+        return "models/gemini-pro" # احتياطي
+    except:
+        return "models/gemini-pro"
 
 if prompt := st.chat_input("اسأل صالح AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    with st.chat_message("user"): st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # التعديل الجوهري: استخدام v1 بدلاً من v1beta واسم الموديل الكامل
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={NEW_API_KEY}"
-        
-        payload = {
-            "contents": [{
-                "parts": [{"text": prompt}]
-            }]
-        }
+        working_model = find_any_working_model()
+        # نداء الموديل اللي لقيناه شغال
+        url = f"https://generativelanguage.googleapis.com/v1beta/{working_model}:generateContent?key={NEW_API_KEY}"
+        payload = {"contents": [{"parts": [{"text": prompt}]}]}
         
         try:
-            response = requests.post(url, json=payload, timeout=15)
-            result = response.json()
-            
-            if response.status_code == 200:
-                text_response = result['candidates'][0]['content']['parts'][0]['text']
-                st.markdown(text_response)
-                st.session_state.messages.append({"role": "assistant", "content": text_response})
+            res = requests.post(url, json=payload)
+            data = res.json()
+            if res.status_code == 200:
+                ans = data['candidates'][0]['content']['parts'][0]['text']
+                st.markdown(ans)
+                st.session_state.messages.append({"role": "assistant", "content": ans})
             else:
-                # لو لسه فيه مشكلة، هنخلي الكود يطبع لنا الرد بالكامل عشان نفهمه
-                st.error(f"رد جوجل: {result}")
+                st.error(f"جوجل لسه معاندة! الموديل اللي لقيناه هو {working_model} بس مش راضي يرد.")
         except Exception as e:
-            st.error(f"فشل الاتصال: {e}")
+            st.error(f"حدث خطأ: {e}")
