@@ -1,98 +1,111 @@
 import streamlit as st
 import requests
 
-# 1. إعدادات الصفحة
+# إعدادات الصفحة
 st.set_page_config(page_title="SALEH AI PRO", page_icon="👑", layout="centered")
 
-# 2. تصميمSALEH AI (الإطارات الدوارة الموحدة)
+# الستايل اللي طلبته (الإنارة الدائرية، الخط الواضح، وزرار الإرسال)
 st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-    
-    .stApp { background-color: #000; font-family: 'Cairo', sans-serif; }
-    
-    .header-h1 { 
-        color: #D4AF37; text-align: center; font-size: 32px; 
-        text-shadow: 0 0 15px #D4AF37; margin-bottom: 20px; font-weight: 700; 
+    <style>
+    /* الخلفية والإنارة الدائرية */
+    .stApp {
+        background-color: #050505;
+        background-image: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
     }
 
-    /* تأثير المربع الذهبي الدوار */
-    .msg-card {
-        position: relative; padding: 2px; border-radius: 15px;
-        overflow: hidden; margin-bottom: 15px; width: fit-content;
-        max-width: 85%; min-width: 120px;
+    /* تحسين الخط وجعله واضح جداً */
+    html, body, [class*="st-"] {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 18px;
+        color: #ffffff;
+    }
+
+    /* فقاعات الكتابة بشكل جميل */
+    div[data-testid="stChatMessage"] {
+        background-color: rgba(30, 30, 30, 0.8) !important;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 15px;
+        border: 1px solid #333;
+        line-height: 1.6;
+    }
+
+    /* تمييز رسالة المستخدم بلمسة ذهبية */
+    div[data-testid="stChatMessageUser"] {
+        border-left: 4px solid #D4AF37 !important;
+    }
+
+    /* تصميم زرار الإرسال ومنطقة الكتابة */
+    .stChatInputContainer {
+        padding-bottom: 30px;
     }
     
-    .msg-card::before {
-        content: ''; position: absolute; top: -50%; left: -50%;
-        width: 200%; height: 200%;
-        background: conic-gradient(from 0deg, transparent, #D4AF37, transparent, #8A6D3B, transparent);
-        animation: rotateMsg 3s linear infinite; z-index: 0;
+    .stChatInput textarea {
+        background-color: #111 !important;
+        color: white !important;
+        border: 1px solid #D4AF37 !important;
+        border-radius: 10px !important;
     }
 
-    @keyframes rotateMsg { 100% { transform: rotate(360deg); } }
-
-    .msg-content {
-        position: relative; z-index: 1; background: #0a0a0a;
-        border-radius: 13px; padding: 12px 18px; color: #fff; font-size: 16px;
+    /* العنوان مع إنارة */
+    h1 {
+        color: #D4AF37;
+        text-align: center;
+        font-size: 3rem !important;
+        font-weight: 800;
+        text-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+        margin-bottom: 10px;
     }
 
-    /* تنسيق منطقة الإدخال لتبدو مثل التصميم المطلوب */
-    .stChatInputContainer { padding-bottom: 30px !important; }
-    .stChatInput div { border: 1px solid #D4AF37 !important; border-radius: 50px !important; background: #111 !important; }
-    
-    /* إخفاء أيقونات ستريم ليت */
-    header, footer {visibility: hidden;}
-</style>
-""", unsafe_allow_html=True)
+    /* تخصيص الـ Spinner */
+    .stSpinner > div { border-top-color: #D4AF37 !important; }
+    </style>
+    """, unsafe_allow_html=True)
 
-st.markdown('<div class="header-h1">👑 SALEH AI</div>', unsafe_allow_html=True)
+st.title("👑 SALEH AI PRO")
+st.markdown("<p style='text-align: center; color: #D4AF37; font-weight: bold;'>مساعدك الشخصي الذكي</p>", unsafe_allow_html=True)
 
-# 3. المحرك المباشر (الأكثر استقراراً)
-API_KEY = "AIzaSyAap0wkUBLjvHgmKe4sfil8FWgoc3Tfp5M"
+# --- المحرك الشغال (لا يلمس) ---
+NEW_API_KEY = "AIzaSyAap0wkUBLjvHgmKe4sfil8FWgoc3Tfp5M"
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# عرض الشات
 for message in st.session_state.messages:
-    align = "flex-start" if message["role"] == "user" else "flex-end"
-    st.markdown(f"""
-        <div style="display: flex; justify-content: {align}; width: 100%; direction: rtl;">
-            <div class="msg-card">
-                <div class="msg-content">{message["content"]}</div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-# دالة ذكية لإحضار الموديل الشغال
-def get_working_url():
-    # بنجرب الموديل الأكثر استقراراً مباشرة
-    return f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+def find_any_working_model():
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={NEW_API_KEY}"
+    try:
+        response = requests.get(url)
+        models_data = response.json()
+        for m in models_data.get('models', []):
+            if 'generateContent' in m.get('supportedGenerationMethods', []):
+                return m['name']
+        return "models/gemini-1.5-flash"
+    except:
+        return "models/gemini-1.5-flash"
 
-if prompt := st.chat_input("اكتب هنا يا صالح..."):
-    # إضافة رسالة المستخدم فوراً
+if prompt := st.chat_input("اكتب سؤالك هنا يا صالح..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    # محاكاة الرد فوراً بدون rerun معقدة
-    with st.chat_message("assistant", avatar=None):
-        url = get_working_url()
-        payload = {"contents": [{"parts": [{"text": prompt}]}]}
-        try:
-            res = requests.post(url, json=payload, timeout=15)
-            if res.status_code == 200:
-                ans = res.json()['candidates'][0]['content']['parts'][0]['text']
-                st.session_state.messages.append({"role": "assistant", "content": ans})
-                st.rerun()
-            else:
-                # محاولة بديلة بموديل برو لو فلاش فشل
-                url_pro = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY}"
-                res = requests.post(url_pro, json=payload, timeout=15)
+    with st.chat_message("user"):
+        st.markdown(f"**صالح:** {prompt}")
+
+    with st.chat_message("assistant"):
+        with st.spinner("جاري تحضير الرد..."):
+            working_model = find_any_working_model()
+            url = f"https://generativelanguage.googleapis.com/v1beta/{working_model}:generateContent?key={NEW_API_KEY}"
+            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+            
+            try:
+                res = requests.post(url, json=payload)
+                data = res.json()
                 if res.status_code == 200:
-                    ans = res.json()['candidates'][0]['content']['parts'][0]['text']
+                    ans = data['candidates'][0]['content']['parts'][0]['text']
+                    st.markdown(ans)
                     st.session_state.messages.append({"role": "assistant", "content": ans})
-                    st.rerun()
                 else:
-                    st.error("جوجل مشغولة، جرب كمان ثواني.")
-        except:
-            st.error("فشل الاتصال، تأكد من مفتاح الـ API أو اتصال الإنترنت.")
+                    st.error("جوجل مشغولة، جرب كمان ثانية.")
+            except:
+                st.error("فشل الاتصال.")
