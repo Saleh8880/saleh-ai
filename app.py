@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import google.generativeai as genai
 
 # إعدادات الصفحة
@@ -10,9 +10,8 @@ st.markdown("""
     .main { background-color: #000000; }
     .stTextInput > div > div > input { color: #D4AF37; background-color: #111; border: 1px solid #D4AF37; }
     .stButton > button { background-color: #D4AF37; color: black; border-radius: 20px; width: 100%; }
-    .chat-bubble { padding: 10px; border-radius: 15px; margin: 5px; border: 1px solid #D4AF37; }
     </style>
-    """, unsafe_allow_config=True)
+    """, unsafe_allow_html=True) # تم تعديل هذا السطر
 
 st.title("👑 SALEH AI - PRO")
 
@@ -25,7 +24,7 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# عرض الرسائل القديمة
+# عرض الرسائل
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
@@ -37,7 +36,10 @@ if prompt := st.chat_input("اسأل صالح AI..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        response = model.generate_content(prompt)
-        full_response = response.text
-        st.markdown(full_response)
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+        try:
+            response = model.generate_content(prompt)
+            full_response = response.text
+            st.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+        except Exception as e:
+            st.error(f"حدث خطأ: {e}")
