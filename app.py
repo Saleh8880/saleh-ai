@@ -3,7 +3,6 @@ import requests
 
 st.set_page_config(page_title="SALEH AI PRO", page_icon="👑")
 
-# تنسيق الواجهة
 st.markdown("""
     <style>
     .main { background-color: #050505; }
@@ -13,7 +12,7 @@ st.markdown("""
 
 st.title("👑 SALEH AI - ULTIMATE")
 
-# المفتاح الجديد
+# المفتاح الجديد بتاعك
 NEW_API_KEY = "AIzaSyAap0wkUBLjvHgmKe4sfil8FWgoc3Tfp5M"
 
 if "messages" not in st.session_state:
@@ -23,15 +22,20 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if prompt := st.chat_input("تحدث مع صالح AI..."):
+if prompt := st.chat_input("اسأل صالح AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # هنا التغيير الجذري: نستخدم gemini-pro (النسخة المستقرة 1.0)
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={NEW_API_KEY}"
-        payload = {"contents": [{"parts": [{"text": prompt}]}]}
+        # التعديل الجوهري: استخدام v1 بدلاً من v1beta واسم الموديل الكامل
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={NEW_API_KEY}"
+        
+        payload = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }]
+        }
         
         try:
             response = requests.post(url, json=payload, timeout=15)
@@ -42,9 +46,7 @@ if prompt := st.chat_input("تحدث مع صالح AI..."):
                 st.markdown(text_response)
                 st.session_state.messages.append({"role": "assistant", "content": text_response})
             else:
-                error_msg = result.get('error', {}).get('message', 'خطأ غير معروف')
-                # لو لسه فيه مشكلة، هنعرض لك الموديلات اللي جوجل سامحة ليك بيها فعلياً
-                st.error(f"جوجل بتقول: {error_msg}")
-                st.info("نصيحة: جرب تكتب 'hello' بالإنجليزية، أحياناً الموديلات الجديدة بتطلب لغة إنجليزية في أول رسالة لتفعيل الحساب.")
+                # لو لسه فيه مشكلة، هنخلي الكود يطبع لنا الرد بالكامل عشان نفهمه
+                st.error(f"رد جوجل: {result}")
         except Exception as e:
             st.error(f"فشل الاتصال: {e}")
