@@ -1,70 +1,126 @@
 import streamlit as st
 import requests
 
-# 1. إعدادات الصفحة
-st.set_page_config(page_title="SALEH AI PRO", page_icon="👑")
+st.set_page_config(
+    page_title="SALEH AI PRO",
+    page_icon="👑",
+    layout="centered"
+)
 
-# 2. تصميمSALEH AI الدوار
+NEW_API_KEY = "AIzaSyAap0wkUBLjvHgmKe4sfil8FWgoc3Tfp5M"
+
+# =======================
+# تنسيق الشكل فقط (CSS)
+# =======================
 st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-    .stApp { background-color: #000; font-family: 'Cairo', sans-serif; }
-    
-    /* الإطار الذهبي الدوار */
-    .msg-card {
-        position: relative; padding: 2px; border-radius: 15px;
-        overflow: hidden; margin-bottom: 20px; width: fit-content;
-        max-width: 85%;
-    }
-    .msg-card::before {
-        content: ''; position: absolute; top: -50%; left: -50%;
-        width: 200%; height: 200%;
-        background: conic-gradient(from 0deg, transparent, #D4AF37, transparent, #8A6D3B, transparent);
-        animation: rotateMsg 3s linear infinite; z-index: 0;
-    }
-    @keyframes rotateMsg { 100% { transform: rotate(360deg); } }
-    .msg-content {
-        position: relative; z-index: 1; background: #0a0a0a;
-        border-radius: 13px; padding: 12px 18px; color: #fff; font-size: 17px;
-    }
+<style>
+/* خلفية عامة */
+.stApp {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #ffffff;
+    font-family: 'Cairo', sans-serif;
+}
 
-    /* منطقة الإدخال الذهبية */
-    .stChatInput div { border: 1px solid #D4AF37 !important; border-radius: 50px !important; background: #111 !important; }
-    header, footer {visibility: hidden;}
-    .main-title { color: #D4AF37; text-align: center; font-size: 35px; text-shadow: 0 0 15px #D4AF37; }
-    </style>
-    """, unsafe_allow_html=True)
+/* العنوان */
+h1 {
+    text-align: center;
+    color: #FFD700;
+    text-shadow: 0 0 10px rgba(255,215,0,0.6);
+}
 
-st.markdown('<h1 class="main-title">👑 SALEH AI PRO</h1>', unsafe_allow_html=True)
+/* صندوق الرسائل */
+.stChatMessage {
+    border-radius: 15px;
+    padding: 10px;
+}
 
-# 3. المحرك المباشر
-API_KEY = "AIzaSyAap0wkUBLjvHgmKe4sfil8FWgoc3Tfp5M"
+/* رسالة المستخدم */
+[data-testid="chat-message-user"] {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+}
 
+/* رسالة المساعد */
+[data-testid="chat-message-assistant"] {
+    background: rgba(255, 215, 0, 0.08);
+    border: 1px solid rgba(255,215,0,0.3);
+}
+
+/* مربع الإدخال */
+.stChatInput textarea {
+    background-color: #111;
+    color: #fff;
+    border-radius: 12px;
+    border: 1px solid #FFD700;
+}
+
+/* زر الإرسال */
+.stChatInput button {
+    background: linear-gradient(135deg, #FFD700, #ffae00);
+    color: #000;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+/* سكرول بار */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-thumb {
+    background: #FFD700;
+    border-radius: 10px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.title("👑 SALEH AI - ULTIMATE")
+
+# =======================
+# المحادثة
+# =======================
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# عرض الرسائل القديمة
 for message in st.session_state.messages:
-    align = "flex-start" if message["role"] == "user" else "flex-end"
-    st.markdown(f'<div style="display: flex; justify-content: {align}; width: 100%;"><div class="msg-card"><div class="msg-content">{message["content"]}</div></div></div>', unsafe_allow_html=True)
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-# منطقة الإدخال والرد
-if prompt := st.chat_input("اسأل صالح AI..."):
-    # عرض رسالة المستخدم فوراً
+# =======================
+# البحث عن موديل شغال
+# =======================
+def find_any_working_model():
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={NEW_API_KEY}"
+    try:
+        response = requests.get(url)
+        models_data = response.json()
+        for m in models_data.get('models', []):
+            if 'generateContent' in m.get('supportedGenerationMethods', []):
+                return m['name']
+        return "models/gemini-pro"
+    except:
+        return "models/gemini-pro"
+
+# =======================
+# الإدخال
+# =======================
+if prompt := st.chat_input("💬 اسأل صالح AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    st.markdown(f'<div style="display: flex; justify-content: flex-start; width: 100%;"><div class="msg-card"><div class="msg-content">{prompt}</div></div></div>', unsafe_allow_html=True)
-    
-    # طلب الرد من جوجل بدون تعقيد
-    with st.spinner("جاري الرد..."):
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        working_model = find_any_working_model()
+        url = f"https://generativelanguage.googleapis.com/v1beta/{working_model}:generateContent?key={NEW_API_KEY}"
+        payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
         try:
-            res = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=15)
+            res = requests.post(url, json=payload)
+            data = res.json()
             if res.status_code == 200:
-                ans = res.json()['candidates'][0]['content']['parts'][0]['text']
+                ans = data['candidates'][0]['content']['parts'][0]['text']
+                st.markdown(ans)
                 st.session_state.messages.append({"role": "assistant", "content": ans})
-                # عرض رد الذكاء الاصطناعي
-                st.markdown(f'<div style="display: flex; justify-content: flex-end; width: 100%;"><div class="msg-card"><div class="msg-content">{ans}</div></div></div>', unsafe_allow_html=True)
             else:
-                st.error("جوجل مشغولة، جرب كمان مرة.")
-        except:
-            st.error("فشل الاتصال. جرب ريفريش للصفحة.")
+                st.error(f"⚠️ الموديل {working_model} مش راضي يرد")
+        except Exception as e:
+            st.error(f"❌ حدث خطأ: {e}")
