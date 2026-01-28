@@ -1,38 +1,27 @@
 import streamlit as st
 import google.generativeai as genai
 
-# إعدادات واجهة صالح الذهبية
 st.set_page_config(page_title="SALEH AI GOLD", page_icon="👑")
 
-st.markdown("""
-    <style>
-    .main { background-color: #050505; }
-    div[data-testid="stChatMessage"] { border-radius: 15px; border: 1px solid #D4AF37; color: white; }
-    .stChatInputContainer { padding-bottom: 20px; }
-    </style>
-    """, unsafe_allow_html=True)
-
-st.title("👑 SALEH AI - ULTIMATE")
-
-# مصفوفة المفاتيح (تم وضع مفاتيحك الاثنين هنا)
+# المفاتيح اللي معاك
 api_keys = [
-    "AIzaSyA83bkpXNvLB7bmcqOpDi7ucGYqI7K7kD4", # المفتاح الأول
-    "AIzaSyCRGxh0HeSmv0QV3BP65yMuWiltDxEskl4"  # المفتاح الثاني الجديد
+    "AIzaSyA83bkpXNvLB7bmcqOpDi7ucGYqI7K7kD4",
+    "AIzaSyCRGxh0HeSmv0QV3BP65yMuWiltDxEskl4"
 ]
 
-# اختيار المفتاح الحالي
 if "key_index" not in st.session_state:
     st.session_state.key_index = 0
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# عرض المحادثة
+st.title("👑 SALEH AI - ULTIMATE")
+
+# عرض الشات
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# المعالجة عند الإرسال
 if prompt := st.chat_input("اسأل صالح AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -40,26 +29,32 @@ if prompt := st.chat_input("اسأل صالح AI..."):
 
     with st.chat_message("assistant"):
         success = False
-        # هيجرب المفتاحين واحد ورا التاني لو حصل ضغط
         for _ in range(len(api_keys)):
             try:
-                current_key = api_keys[st.session_state.key_index]
-                genai.configure(api_key=current_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                # ضبط المفتاح الحالي
+                genai.configure(api_key=api_keys[st.session_state.key_index])
                 
-                response = model.generate_content(prompt)
+                # الحل هنا: استخدام الاسم المختصر للموديل
+                # لو فلاش مانفعش، الكود هيجرب 'gemini-pro' أوتوماتيك
+                try:
+                    model = genai.GenerativeModel('gemini-1.5-flash')
+                    response = model.generate_content(prompt)
+                except:
+                    model = genai.GenerativeModel('gemini-pro')
+                    response = model.generate_content(prompt)
+
                 st.markdown(response.text)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
                 success = True
-                break # نجح الإرسال، اخرج من اللوب
+                break
             except Exception as e:
-                if "429" in str(e): # لو المفتاح الحالي جاب Quota Exceeded
-                    # بدل للمفتاح اللي بعده
+                error_msg = str(e)
+                if "429" in error_msg: # ضغط رسايل
                     st.session_state.key_index = (st.session_state.key_index + 1) % len(api_keys)
                     continue
                 else:
-                    st.error(f"حدث خطأ: {e}")
+                    st.error(f"تنبيه فني: {error_msg}")
                     break
         
         if not success:
-            st.warning("⚠️ للأسف يا صالح، المفتاحين استهلكوا كل طاقتهم حالياً. استنى دقيقة وجرب تاني.")
+            st.info("صالح، جرب تعمل ريفريش (Refresh) للصفحة، السيرفر بيحدث بيانات المفاتيح.")
