@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-# --- 1. إعدادات الصفحة (يجب أن تكون في البداية) ---
+# --- 1. إعدادات الصفحة ---
 st.set_page_config(
     page_title="SALEH AI PRO",
     page_icon="👑",
@@ -11,26 +11,19 @@ st.set_page_config(
 # --- 2. التصميم الاحترافي (CSS) ---
 st.markdown("""
 <style>
-    /* استيراد خط عربي أنيق */
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-
     html, body, [class*="css"] {
         font-family: 'Cairo', sans-serif;
     }
-    
-    /* لون الخلفية ونمط الرسائل */
     .stApp {
         background-color: #0e1117;
     }
-    
     h1 {
-        color: #FFD700 !important; /* لون ذهبي */
+        color: #FFD700 !important;
         text-align: center;
         border-bottom: 1px solid #333;
         padding-bottom: 20px;
     }
-    
-    /* تحسين شكل الرسائل */
     .stChatMessage {
         background-color: #262730;
         border-radius: 10px;
@@ -39,28 +32,20 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. المتغيرات والدوال (من كودك الشغال) ---
+# --- 3. المتغيرات ---
 NEW_API_KEY = "AIzaSyAap0wkUBLjvHgmKe4sfil8FWgoc3Tfp5M"
 
+# --- 4. دالة اختيار الموديل (تم التعديل للإصلاح) ---
 def find_any_working_model():
-    # دالتك الأصلية التي تعمل بنجاح
-    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={NEW_API_KEY}"
-    try:
-        response = requests.get(url)
-        models_data = response.json()
-        for m in models_data.get('models', []):
-            if 'generateContent' in m.get('supportedGenerationMethods', []):
-                return m['name'] 
-        return "models/gemini-pro"
-    except:
-        return "models/gemini-pro"
+    # ⚠️ التعديل هنا: بدلاً من البحث العشوائي الذي يسبب مشاكل 403
+    # سنقوم بإرجاع الموديل المستقر والمجاني مباشرة
+    return "models/gemini-1.5-flash"
 
-# --- 4. واجهة التطبيق ---
-
-# القائمة الجانبية (إضافة جمالية)
+# --- 5. واجهة التطبيق ---
 with st.sidebar:
     st.title("⚙️ لوحة التحكم")
     st.write("حالة النظام: **متصل** ✅")
+    st.caption("الموديل المستخدم: Gemini 1.5 Flash")
     if st.button("مسح المحادثة 🗑️"):
         st.session_state.messages = []
         st.rerun()
@@ -70,44 +55,42 @@ st.title("👑 SALEH AI - ULTIMATE")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# عرض المحادثة السابقة
+# عرض المحادثة
 for message in st.session_state.messages:
-    # تحديد الأيقونة بناءً على المرسل
     avatar = "👑" if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
-# --- 5. استقبال السؤال والمعالجة ---
+# --- 6. المعالجة ---
 if prompt := st.chat_input("اسأل صالح AI..."):
-    # عرض سؤال المستخدم
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
 
-    # معالجة الرد
     with st.chat_message("assistant", avatar="👑"):
         status_placeholder = st.empty()
-        status_placeholder.markdown("⏳ *جاري الاتصال بالموديل...*")
+        status_placeholder.markdown("⏳ *جاري الاتصال...*")
         
+        # استدعاء الدالة (التي سترجع الآن الموديل الصحيح فقط)
         working_model = find_any_working_model()
         
-        # استخدام نفس رابطك ومنطقك
         url = f"https://generativelanguage.googleapis.com/v1beta/{working_model}:generateContent?key={NEW_API_KEY}"
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
         
         try:
             res = requests.post(url, json=payload)
-            data = res.json()
-
+            
             if res.status_code == 200:
-                # نجح الاتصال
+                data = res.json()
                 ans = data['candidates'][0]['content']['parts'][0]['text']
-                status_placeholder.empty() # إخفاء رسالة الانتظار
+                status_placeholder.empty()
                 st.markdown(ans)
                 st.session_state.messages.append({"role": "assistant", "content": ans})
             else:
                 status_placeholder.empty()
-                st.error(f"⚠️ خطأ من جوجل: {working_model} لم يستجب. (Code: {res.status_code})")
+                # طباعة تفاصيل الخطأ للمساعدة في التشخيص
+                st.error(f"⚠️ خطأ ({res.status_code}): الموديل {working_model} لم يستجب.")
+                st.code(res.text) # سيعرض لنا رسالة جوجل بالضبط لو حدث خطأ
                 
         except Exception as e:
             status_placeholder.empty()
